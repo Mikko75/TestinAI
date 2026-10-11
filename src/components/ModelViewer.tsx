@@ -20,7 +20,8 @@ export function ModelViewer({ model, viewerRef, onArAvailabilityChange, onArStat
   const [attempt, setAttempt] = useState(0)
   // model-viewer pitää myös epäonnistuneen latauksen välimuistissa URL:n perusteella,
   // joten uusi yritys tarvitsee eri URL:n.
-  const src = attempt === 0 ? model.src : `${model.src}?yritys=${attempt}`
+  const url = `${import.meta.env.BASE_URL}models/${model.file}`
+  const src = attempt === 0 ? url : `${url}?yritys=${attempt}`
 
   useEffect(() => {
     const viewer = viewerRef.current
@@ -84,7 +85,10 @@ export function ModelViewer({ model, viewerRef, onArAvailabilityChange, onArStat
         shadow-intensity="1"
         loading="eager"
         className="block h-[62svh] min-h-80 max-h-[44rem] w-full rounded-2xl bg-stage focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-      />
+      >
+        {/* Korvaa model-viewerin oman latauspalkin; latausilmoitus näytetään alla. */}
+        <div slot="progress-bar" />
+      </model-viewer>
 
       {loadState === 'loading' && (
         <div

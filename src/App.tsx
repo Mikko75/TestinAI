@@ -1,13 +1,23 @@
 import type { ModelViewerElement } from '@google/model-viewer'
 import { useRef, useState } from 'react'
 import { ArButton } from './components/ArButton'
+import { FurnitureDetails } from './components/FurnitureDetails'
+import { FurniturePicker } from './components/FurniturePicker'
 import { ModelViewer, type ArAvailability, type ArStatus } from './components/ModelViewer'
-import { sampleChair } from './furniture'
+import { furniture } from './furniture'
 
 export default function App() {
   const viewerRef = useRef<ModelViewerElement>(null)
+  const [modelId, setModelId] = useState(furniture[0].id)
   const [arAvailability, setArAvailability] = useState<ArAvailability>('checking')
   const [arStatus, setArStatus] = useState<ArStatus | null>(null)
+  const model = furniture.find((item) => item.id === modelId) ?? furniture[0]
+
+  const selectModel = (id: string) => {
+    setModelId(id)
+    setArAvailability('checking')
+    setArStatus(null)
+  }
 
   const activateAr = () => {
     setArStatus(null)
@@ -21,23 +31,35 @@ export default function App() {
         <span className="text-lg font-semibold tracking-tight">Realitin AR</span>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-8 px-5 pb-16 sm:px-8">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-5 pb-12 sm:px-8">
+        <FurniturePicker options={furniture} selectedId={model.id} onSelect={selectModel} />
+
+        {/* Avain luo katselukomponentin uudelleen, jolloin lataus- ja virhetila alkavat alusta. */}
         <ModelViewer
-          model={sampleChair}
+          key={model.id}
+          model={model}
           viewerRef={viewerRef}
           onArAvailabilityChange={setArAvailability}
           onArStatusChange={setArStatus}
         />
 
-        <section className="flex max-w-xl flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-semibold tracking-tight">{sampleChair.name}</h1>
-            <p className="text-lg text-muted">Pyöritä ja tarkastele huonekalua.</p>
-          </div>
-
+        <section className="mt-2 flex max-w-xl flex-col gap-6">
+          <FurnitureDetails model={model} />
           <ArButton availability={arAvailability} status={arStatus} onActivate={activateAr} />
         </section>
       </main>
+
+      <footer className="mx-auto max-w-5xl border-t border-line px-5 py-6 text-sm text-muted sm:px-8">
+        3D-malli: {model.credit.text},{' '}
+        <a href={model.credit.licenceUrl} className="underline underline-offset-2 hover:text-ink">
+          {model.credit.licence}
+        </a>{' '}
+        (
+        <a href={model.credit.sourceUrl} className="underline underline-offset-2 hover:text-ink">
+          lähde
+        </a>
+        )
+      </footer>
     </div>
   )
 }

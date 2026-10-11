@@ -8,7 +8,8 @@ type Props = {
 
 const messages: Record<ArAvailability, string> = {
   checking: 'Tarkistetaan, tukeeko laitteesi AR-katselua…',
-  available: 'Liikuta puhelinta ja sijoita huonekalu haluamaasi paikkaan.',
+  available:
+    'Liikuta puhelinta ja sijoita huonekalu haluamaasi paikkaan. Huonekalu näkyy yllä mainitussa koossa, eikä kokoa voi muuttaa.',
   unavailable:
     'Voit tarkastella huonekalua 3D-näkymässä. AR-katselu vaatii yhteensopivan puhelimen ja selaimen.',
   'model-error': 'AR-katselu on käytettävissä, kun 3D-malli on ladattu.',
