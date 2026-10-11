@@ -2,13 +2,14 @@
 
 Selainpohjainen WebAR-esikatselu huonekaluille. Projektin laajuus ja vaiheet: [REALITIN_AR_PROJECT.md](REALITIN_AR_PROJECT.md).
 
-**Nykyinen vaihe: PHASE 2 – AR:n luotettavuus.** Valmiit 3D-mallit näytetään selaimessa, ja ne voi avata AR-näkymään yhteensopivalla puhelimella. PHASE 1 (toimiva WebAR) on toteutettu; sen Android-laitetesti on vielä tekemättä.
+**Nykyinen vaihe: PHASE 3 – kuvan lataus ja taustan poisto.** Sivulla on kaksi näkymää: *3D-mallit* (valmiit mallit selaimessa ja AR:ssä) ja *Oma kuva* (huonekalukuvan taustan poisto laitteella). PHASE 1–2 on toteutettu; Android-laitetesti on vielä tekemättä.
 
 ## Teknologia
 
 - React 19, TypeScript, Vite 8
 - Tailwind CSS 4 (`@tailwindcss/vite`)
 - [`@google/model-viewer`](https://modelviewer.dev/) 4.4 (vertaisriippuvuus `three` 0.183)
+- Taustan poisto: [`@huggingface/transformers`](https://huggingface.co/docs/transformers.js) 4.3 (ONNX Runtime Web, WebGPU / WebAssembly)
 - Mallien käsittely (vain kehitystyökaluina): `@gltf-transform/*` 4.5, `sharp`
 - Ei backendiä
 
@@ -35,7 +36,10 @@ src/components/ModelViewer.tsx      model-viewer, lataus-, virhe- ja uudelleenyr
 src/components/ArButton.tsx         "Katso omassa tilassasi" -painike ja ohje-/varatekstit
 src/components/FurniturePicker.tsx  huonekalun valinta
 src/components/FurnitureDetails.tsx nimi, mitat ja mittojen vahvistustila
-src/App.tsx                         sivun asettelu
+src/pages/ModelsPage.tsx            näkymä "3D-mallit"
+src/pages/RemoveBackgroundPage.tsx  näkymä "Oma kuva": valinta, tarkistus, taustan poisto, tulos
+src/background-removal/             taustanpoisto: worker, pääsäikeen rajapinta, kuvan tarkistus
+src/App.tsx                         header, navigaatio (#/ ja #/oma-kuva)
 src/model-viewer.d.ts               JSX-tyypit <model-viewer>-elementille
 scripts/optimize-models.mjs         mallien optimointi
 scripts/check-models.ts             mittojen ja kohdistuksen tarkistus
@@ -98,6 +102,49 @@ Geometriaa ei pakata (Draco/Meshopt), koska model-viewer hakisi dekooderit ulkoi
 - Scene Viewer vaatii julkisen HTTPS-osoitteen; WebXR vaatii HTTPS-yhteyden. Pelkkä lähiverkon HTTP-osoite ei riitä.
 - JS-paketti on noin 1,25 Mt (gzip 362 kt), lähes kokonaan model-viewer ja three.js. Koko on sivun pääsisältö, joten jakaminen osiin ei nopeuttaisi mallin näkymistä; Vite varoittaa koosta.
 
+## Taustan poisto (PHASE 3)
+
+Näkymä *Oma kuva* (`#/oma-kuva`):
+
+1. Käyttäjä valitsee tai pudottaa kuvan. Tarkistukset: tiedoston sisältö on PNG tai JPEG (tunnistetaan tiedoston alusta, ei nimestä), koko enintään 15 Mt, kuva aukeaa, lyhyempi sivu vähintään 256 px.
+2. **Poista tausta** käynnistää käsittelyn Web Workerissa, joten sivu ei jäädy.
+3. Tulos näytetään ruudukkotaustalla alkuperäisen vieressä, ja sen voi ladata PNG-tiedostona.
+
+Kaikki virheet ovat palautettavissa: väärä tiedosto → valitse toinen; mallin lataus tai käsittely epäonnistui → *Yritä uudelleen*; huonekalua ei löytynyt → valitse toinen kuva.
+
+**Tulos myöhempää 3D-generointia varten** (`PreparedImage` tiedostossa `src/background-removal/removeBackground.ts`): PNG, läpinäkyvä tausta, tyhjät reunat rajattu (2 %:n marginaali), pidempi sivu enintään 2048 px, EXIF-suunta korjattu.
+
+### Mallin valinta
+
+Aiempaa Realitin-taustanpoistokoodia ei löytynyt tältä koneelta (Documents, Desktop, Downloads). Omistaja valitsi laitteella toimivan ilmaisen toteutuksen. Vertailu 11.10.2026 (Chrome, macOS, kuusi Wikimedia Commons -kuvaa):
+
+| Malli | Lisenssi | Koko | Tulos |
+| --- | --- | --- | --- |
+| **BiRefNet_lite 512** (`studioludens/birefnet-lite-512`) | MIT | 98 Mt (fp16) | **Valittu.** Tuotekuvat erinomaisia (myös jalkojen ja pyörien välit). WebGPU ~1 s/kuva, WebAssembly ~5 s/kuva. |
+| BiRefNet_lite 1024 | MIT | 115 Mt (fp16) | Ei toimi: WebAssemblyllä muisti loppuu, WebGPU:lla näytönohjaimen raja ylittyy. |
+| ISNet | AGPL-3.0 | 44 Mt | Hylätty lisenssin vuoksi. |
+| RMBG-1.4 / 2.0 (BRIA) | ei-kaupallinen | 44–176 Mt | Hylätty lisenssin vuoksi. |
+| ormbg | Apache 2.0 | 44 Mt | Hylätty: optimoitu ihmiskuville. |
+| MODNet | Apache 2.0 | 7 Mt | Hylätty: muotokuville. |
+| U-2-Netp | Apache 2.0 | 5 Mt | Ei tuettu transformers.js:n taustanpoistoputkessa; vaatisi oman toteutuksen. |
+
+Malli on lukittu versioon `4a3c40c`. Laitteelle valitaan WebGPU, jos se on käytettävissä; jos WebGPU-ajo epäonnistuu, käytetään automaattisesti WebAssemblyä.
+
+### Verkkoyhteydet
+
+Kuva ei lähde laitteelta. Ensimmäisellä käyttökerralla selain lataa:
+
+- mallin Hugging Facesta (`huggingface.co`, noin 98 Mt)
+- ONNX Runtimen WebAssembly-tiedoston jsDelivr-CDN:stä (`cdn.jsdelivr.net`, noin 27 Mt)
+
+Molemmat tallentuvat selaimen välimuistiin. Vite kopioi WebAssembly-tiedoston myös `dist/`-kansioon, mutta sitä ei käytetä.
+
+### Rajoitukset
+
+- Malli on tarkoitettu kuville, joissa on yksi huonekalu selkeällä taustalla. Huonekuvissa se voi valita väärän esineen (testissä pöydän sohvan sijaan), ja kuvan reunoihin rajautunut huonekalu voi kadota kokonaan.
+- Puhelinten nopeutta ei ole mitattu. WebAssembly-tilassa käsittely on noin viisi kertaa hitaampi kuin WebGPU:lla; vanhoilla puhelimilla muisti voi loppua.
+- iPhone muuntaa HEIC-kuvat JPEG-muotoon, kun ne valitaan selaimessa; tätä ei ole testattu.
+
 ## Testaus puhelimella (HTTPS)
 
 Puhelimen `localhost` viittaa puhelimeen itseensä, ei kehityskoneeseen. Sivu pitää tarjota julkisen HTTPS-osoitteen kautta. Helpoin tapa on Cloudflaren pikatunneli (ilmainen, ei tiliä):
@@ -121,6 +168,14 @@ Vaihtoehto: julkaise `dist/`-kansio staattiseen HTTPS-palveluun (esim. Netlify, 
 5. Osoita kameralla lattiaa, sijoita huonekalu ja kävele sen ympäri. Tarkista, että jalat ovat lattialla eivätkä leiju tai uppoa.
 6. **Sohvan mittakaava:** mittaa mittanauhalla sohvan leveys AR-näkymässä. Odotettu ≈ 219 cm.
 7. Kirjaa: laitemalli, iOS-versio, huonekalu, avautuiko AR, lattiakohdistus, mitattu leveys, materiaalien ulkonäkö.
+
+### Taustan poisto puhelimella
+
+1. Avaa **Oma kuva** (wifi suositeltava ensimmäisellä kerralla).
+2. Valitse kuva kamerarullasta tai ota uusi kuva.
+3. Paina **Poista tausta** ja odota. Kirjaa aika ensimmäisellä ja toisella kerralla.
+4. Tarkista tulos ja lataa PNG.
+5. Kirjaa: laitemalli, käyttöjärjestelmä, selain, kesto, onnistuiko, laatu.
 
 ### Android
 
@@ -155,3 +210,17 @@ Vaihtoehto: julkaise `dist/`-kansio staattiseen HTTPS-palveluun (esim. Netlify, 
 | Huonekalun vaihto | Passed | Hiiri ja näppäimistö (sarkain + nuolinäppäimet); lataustila ja AR-tila päivittyvät. |
 | iPhone AR, sohva ja optimoitu tuoli | Passed | Omistajan testi 11.10.2026 ("toimii"): iPhone, Quick Look, tunnelin HTTPS-osoite. Laitemallia, iOS-versiota ja mitattua leveyttä ei kirjattu. |
 | Android AR | Not tested | Ks. testiohjeet. |
+
+### PHASE 3 (kesken)
+
+| Check | Result | Evidence or remaining action |
+| --- | --- | --- |
+| Build, lint | Passed | Ilman virheitä. Taustanpoistokoodi on omassa 548 kt:n workerissaan; 3D-sivun paketti ei kasvanut merkittävästi. |
+| Tiedoston tarkistus | Passed | Väärä tiedostotyyppi ja liian pieni kuva → oikeat virheilmoitukset (Playwright). |
+| Taustan poisto, työpöytä | Passed | Chrome (macOS, WebGPU): ensimmäinen kuva 25 s, josta mallin lataus 22 s; seuraavat 1,3 s. Ei konsolivirheitä. |
+| Tyhjä tulos | Passed | Yksivärinen kuva → "Kuvasta ei löytynyt selvää huonekalua". |
+| PNG:n lataus | Passed | Tiedostonimi `<nimi>-tausta-poistettu.png`. |
+| Mobiiliasettelu | Passed (emuloitu) | iPhone 13 -emulointi: yksi palsta, ei vaakavieritystä. |
+| Kuva ei lähde laitteelta | Passed | Verkkopyynnöt vain Hugging Faceen (malli) ja jsDelivriin (ONNX Runtime). |
+| iPhone | Not tested | Ks. testiohjeet. |
+| Android | Not tested | Ks. testiohjeet. |

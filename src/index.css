@@ -16,6 +16,13 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Läpinäkyvyyden osoittava ruudukko taustattoman kuvan alla. */
+.checkerboard {
+  background-color: #fff;
+  background-image: conic-gradient(var(--color-stage) 25%, transparent 0 50%, var(--color-stage) 0 75%, transparent 0);
+  background-size: 24px 24px;
+}
+
 model-viewer {
   /* Oletus-AR-painike piilotetaan; sivulla on oma "Katso omassa tilassasi" -painike. */
   --ar-button-display: none;
