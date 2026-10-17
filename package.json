@@ -14,7 +14,8 @@
     "wp:dev": "npm run wp:vendor && node scripts/wp-dev.mjs",
     "wp:zip": "npm run wp:vendor && mkdir -p dist-plugin && rm -f dist-plugin/realitin-ar.zip && cd wordpress-plugin && zip -rq ../dist-plugin/realitin-ar.zip realitin-ar -x '*.DS_Store' && echo dist-plugin/realitin-ar.zip",
     "wp:dev:public": "npm run wp:vendor && node scripts/wp-dev.mjs --public",
-    "server": "node --env-file-if-exists=server/.env server/index.ts"
+    "server": "node --env-file-if-exists=server/.env server/index.ts",
+    "models:parametric": "node scripts/build-parametric.ts public/models/ParametricReclinerSofa.glb"
   },
   "dependencies": {
     "@google/model-viewer": "^4.4.0",

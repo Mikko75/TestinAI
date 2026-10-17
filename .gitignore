@@ -30,3 +30,6 @@ dist-plugin/
 # Realitin-palvelu: salaisuudet ja generoidut mallit
 server/.env
 server/data/
+
+# Testikaupan yksityiset kuvat (oikeudet kolmansilla osapuolilla)
+wordpress-plugin/dev/private/

@@ -66,3 +66,30 @@ $image_id = media_handle_sideload( array( 'name' => 'lounge-chair-photo.jpg', 't
 if ( ! is_wp_error( $image_id ) ) {
 	set_post_thumbnail( $product_id, $image_id );
 }
+
+// Parametric model built from a product photo (npm run models:parametric). The photo is kept in
+// dev/private, which is not committed because the image rights belong to the manufacturer.
+$photo = '/realitin-dev/private/leather-recliner-sofa-photo.png';
+if ( file_exists( $photo ) && file_exists( '/realitin-models/ParametricReclinerSofa.glb' ) ) {
+	$product = new WC_Product_Simple();
+	$product->set_name( 'Leather Power Reclining Sofa (parametric model)' );
+	$product->set_regular_price( '2199' );
+	$product->set_status( 'publish' );
+	$product->set_length( '220' );
+	$product->set_width( '100' );
+	$product->set_height( '103' );
+	$product_id = $product->save();
+
+	$tmp      = wp_tempnam( 'sofa-photo.png' );
+	copy( $photo, $tmp );
+	$image_id = media_handle_sideload( array( 'name' => 'leather-recliner-sofa-photo.png', 'tmp_name' => $tmp ), $product_id );
+	if ( ! is_wp_error( $image_id ) ) {
+		set_post_thumbnail( $product_id, $image_id );
+	}
+	$tmp      = wp_tempnam( 'ParametricReclinerSofa.glb' );
+	copy( '/realitin-models/ParametricReclinerSofa.glb', $tmp );
+	$model_id = media_handle_sideload( array( 'name' => 'ParametricReclinerSofa.glb', 'tmp_name' => $tmp ), $product_id );
+	if ( ! is_wp_error( $model_id ) ) {
+		update_post_meta( $product_id, REALITIN_AR_META_MODEL, $model_id );
+	}
+}
