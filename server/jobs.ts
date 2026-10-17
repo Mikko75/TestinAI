@@ -142,7 +142,7 @@ async function run(job: Job) {
       const code = error instanceof QualityError ? 'quality' : 'generation'
       console.error(`Työ ${job.id}, yritys ${job.attempts}:`, error)
       // Uusi yritys vain generointivirheissä; laatuvirhe toistuisi samalla mallilla todennäköisesti.
-      if (code === 'generation' && error instanceof ProviderError && job.attempts < MAX_ATTEMPTS) continue
+      if (error instanceof ProviderError && error.retryable && job.attempts < MAX_ATTEMPTS) continue
       await update(job, {
         status: 'failed',
         error: { code, message: error instanceof Error ? error.message : String(error) },

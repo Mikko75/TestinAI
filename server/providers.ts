@@ -7,7 +7,14 @@ export type GenerationProgress = (stage: 'uploading' | 'generating', progress: n
 
 export type GenerationResult = { glb: Uint8Array; creditsConsumed: number | null }
 
-export class ProviderError extends Error {}
+export class ProviderError extends Error {
+  /** Kannattaako yrittää uudelleen: ei esim. krediittien puutteessa tai virheellisellä avaimella. */
+  readonly retryable: boolean
+  constructor(message: string, retryable = true) {
+    super(message)
+    this.retryable = retryable
+  }
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -36,7 +43,12 @@ async function tripo<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ProviderError(`Tripo ${path}: HTTP ${response.status} ${text.slice(0, 200)}`)
   }
   if (!response.ok || body.code !== 0) {
-    throw new ProviderError(`Tripo ${path}: HTTP ${response.status}, code ${body.code}: ${body.message ?? text.slice(0, 200)}`)
+    // 4xx (paitsi 429) johtuu pyynnöstä tai tilistä, eikä uusi yritys auta.
+    const retryable = response.status >= 500 || response.status === 429
+    throw new ProviderError(
+      `Tripo ${path}: HTTP ${response.status}, code ${body.code}: ${body.message ?? text.slice(0, 200)}`,
+      retryable,
+    )
   }
   return body.data
 }
