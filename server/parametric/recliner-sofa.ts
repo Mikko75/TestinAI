@@ -15,10 +15,12 @@ export type ReclinerSofaParams = {
   color: [number, number, number]
 }
 
+// Bassett Club Level Evo Power Reclining Sofa (3706-P62): 88" L × 42" S × 42" K jälleenmyyjien mukaan.
+// Käsinojan pehmuste ulottuu rungon eteen noin 4,5 cm, joten syvyysparametri on kokonaissyvyyttä pienempi.
 export const defaultReclinerSofa: ReclinerSofaParams = {
-  width: 2.2,
-  height: 1.03,
-  depth: 1.0,
+  width: 2.235,
+  height: 1.069,
+  depth: 1.022,
   seatHeight: 0.5,
   seats: 3,
   color: [0.042, 0.046, 0.05],

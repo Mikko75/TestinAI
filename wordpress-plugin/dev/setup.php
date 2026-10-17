@@ -77,9 +77,9 @@ if ( file_exists( $photo ) && file_exists( '/realitin-models/ParametricReclinerS
 	$product->set_slug( 'leather-power-reclining-sofa-parametric-model' );
 	$product->set_regular_price( '2199' );
 	$product->set_status( 'publish' );
-	$product->set_length( '220' );
-	$product->set_width( '100' );
-	$product->set_height( '103' );
+	$product->set_length( '223.5' );
+	$product->set_width( '106.7' );
+	$product->set_height( '106.7' );
 	$product_id = $product->save();
 
 	$tmp      = wp_tempnam( 'sofa-photo.png' );
