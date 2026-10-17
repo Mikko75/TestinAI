@@ -5,10 +5,11 @@ import {
   type PreparedImage,
   type RemovalProgress,
 } from '../background-removal/removeBackground'
-import { ACCEPTED_TYPES, validateImage, type ImageValidation } from '../background-removal/validateImage'
+import { clearStage, markStage, takeInterruption } from '../background-removal/interruption'
+import { ACCEPTED_TYPES, loadImage, type ImageValidation } from '../background-removal/validateImage'
 import type { RemovalErrorCode } from '../background-removal/protocol'
 
-type Selected = { file: File; url: string }
+type Selected = { file: File; image: Blob; url: string }
 type Status =
   | { step: 'ready' }
   | { step: 'working'; progress: RemovalProgress | null }
@@ -31,6 +32,12 @@ const removalMessages: Record<RemovalErrorCode, string> = {
 }
 
 const megabytes = (bytes: number) => (bytes / 1e6).toFixed(0)
+
+// Luetaan kerran sivun latautuessa (ei komponentissa, koska StrictMode ajaa alustuksen kahdesti).
+const interruption = takeInterruption()
+// Aika käsittelyn alusta sivun uudelleenlataukseen eli suunnilleen kaatumishetkeen.
+const interruptedAfterSeconds = interruption ? Math.round((Date.now() - interruption.startedAt) / 1000) : 0
+const hasWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator
 
 const primaryButton =
   'min-h-12 rounded-full bg-ink px-6 text-base font-medium text-paper transition-colors hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ink disabled:cursor-not-allowed disabled:bg-line disabled:text-muted'
@@ -57,24 +64,37 @@ export function RemoveBackgroundPage() {
 
   const chooseFile = async (file: File | undefined) => {
     if (!file || working) return
-    const validation = await validateImage(file)
-    if (!validation.ok) {
-      setValidationError(validationMessages[validation.reason])
+    const loaded = await loadImage(file)
+    if (!loaded.ok) {
+      setValidationError(validationMessages[loaded.reason])
       return
     }
     setValidationError(null)
     setStatus({ step: 'ready' })
-    setSelected({ file, url: URL.createObjectURL(file) })
+    setSelected({ file, image: loaded.image, url: URL.createObjectURL(loaded.image) })
   }
 
   const start = async () => {
     if (!selected) return
     setStatus({ step: 'working', progress: null })
+    const startedAt = Date.now()
+    let lastStage = 'valmistelu'
+    markStage(lastStage, startedAt)
+    const onProgress = (progress: RemovalProgress) => {
+      setStatus({ step: 'working', progress })
+      const stage =
+        progress.stage === 'processing'
+          ? 'taustan poisto'
+          : `mallin lataus ${Math.floor((progress.loaded / Math.max(progress.total, 1)) * 10) * 10} %`
+      if (stage !== lastStage) markStage((lastStage = stage), startedAt)
+    }
     try {
-      const result = await removeBackground(selected.file, (progress) => setStatus({ step: 'working', progress }))
+      const result = await removeBackground(selected.image, selected.file.name, onProgress)
       setStatus({ step: 'done', result, url: URL.createObjectURL(result.image) })
     } catch (error) {
       setStatus({ step: 'failed', code: error instanceof RemovalError ? error.code : 'processing' })
+    } finally {
+      clearStage()
     }
   }
 
@@ -99,6 +119,22 @@ export function RemoveBackgroundPage() {
           taustanpoistomalli, joten wifi-yhteys on suositeltava.
         </p>
       </section>
+
+      {interruption && (
+        <div role="alert" className="flex max-w-2xl flex-col gap-2 rounded-2xl bg-stage px-5 py-4">
+          <p className="text-base font-medium text-ink">
+            Edellinen taustan poisto keskeytyi vaiheessa: {interruption.stage}.
+          </p>
+          <p className="text-base text-ink">
+            Selain sulki sivun todennäköisesti siksi, että laitteen muisti loppui. Sulje muut välilehdet ja sovellukset ja
+            yritä uudelleen.
+          </p>
+          <p className="text-sm text-muted">
+            Tekninen tieto: keskeytyi {interruptedAfterSeconds} s aloituksen jälkeen, WebGPU{' '}
+            {hasWebGpu ? 'käytettävissä' : 'ei käytettävissä'}.
+          </p>
+        </div>
+      )}
 
       {/* Tiedostovalinta */}
       <div

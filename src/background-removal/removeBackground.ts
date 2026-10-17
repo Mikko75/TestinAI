@@ -22,7 +22,11 @@ export class RemovalError extends Error {
 let worker: Worker | null = null
 
 /** Poistaa kuvasta taustan laitteella. Malli ladataan ensimmäisellä kutsulla. */
-export function removeBackground(file: File, onProgress: (progress: RemovalProgress) => void): Promise<PreparedImage> {
+export function removeBackground(
+  image: Blob,
+  sourceName: string,
+  onProgress: (progress: RemovalProgress) => void,
+): Promise<PreparedImage> {
   worker ??= new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
   const current = worker
 
@@ -37,7 +41,7 @@ export function removeBackground(file: File, onProgress: (progress: RemovalProgr
           onProgress({ stage: 'processing' })
           break
         case 'done':
-          resolve({ image: message.image, width: message.width, height: message.height, sourceName: file.name })
+          resolve({ image: message.image, width: message.width, height: message.height, sourceName })
           break
         case 'error':
           reject(new RemovalError(message.code, message.detail))
@@ -50,6 +54,6 @@ export function removeBackground(file: File, onProgress: (progress: RemovalProgr
       worker = null
       reject(new RemovalError('download', event.message))
     }
-    current.postMessage({ type: 'remove', image: file } satisfies WorkerRequest)
+    current.postMessage({ type: 'remove', image } satisfies WorkerRequest)
   })
 }
