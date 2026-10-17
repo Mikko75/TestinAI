@@ -26,3 +26,7 @@ dist-ssr
 # WordPress-lisäosa: generoitu (npm run wp:vendor) ja paketti (npm run wp:zip)
 wordpress-plugin/realitin-ar/assets/vendor/
 dist-plugin/
+
+# Realitin-palvelu: salaisuudet ja generoidut mallit
+server/.env
+server/data/

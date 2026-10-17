@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       Realitin AR
- * Description:       Shows a 3D model and a "View in your room" augmented reality button on WooCommerce product pages.
+ * Description:       Generates 3D models from product images and shows them with a "View in your room" augmented reality button on WooCommerce product pages.
  * Version:           0.1.0
  * Requires at least: 6.5
  * Requires PHP:      7.4
@@ -27,6 +27,9 @@ define( 'REALITIN_AR_META_MODEL', '_realitin_ar_model_id' );
 
 require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-model-files.php';
 require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-admin.php';
+require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-service.php';
+require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-settings.php';
+require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-generator.php';
 require_once REALITIN_AR_DIR . 'includes/class-realitin-ar-frontend.php';
 
 add_action(
@@ -46,6 +49,8 @@ add_action(
 		}
 		if ( is_admin() ) {
 			Realitin_AR_Admin::init();
+			Realitin_AR_Settings::init();
+			Realitin_AR_Generator::init();
 		}
 		Realitin_AR_Frontend::init();
 	}

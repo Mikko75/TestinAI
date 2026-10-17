@@ -55,6 +55,62 @@ class Realitin_AR_Admin {
 			<p class="description">
 				<?php esc_html_e( 'The model is shown at its real size in AR. Check that the model is in metres and stands on the floor.', 'realitin-ar' ); ?>
 			</p>
+			<?php self::render_generator( $post ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * "Generate from product image" section.
+	 *
+	 * @param WP_Post $post Product post.
+	 */
+	private static function render_generator( $post ) {
+		$product = wc_get_product( $post->ID );
+		if ( ! $product ) {
+			return;
+		}
+		?>
+		<hr />
+		<div class="realitin-ar-generate" data-realitin-ar-generate>
+			<p><strong><?php esc_html_e( 'Generate from product image', 'realitin-ar' ); ?></strong></p>
+			<?php
+			if ( ! Realitin_AR_Service::is_configured() ) {
+				echo '<p>';
+				printf(
+					/* translators: %s: link to the settings page */
+					esc_html__( 'Connect the Realitin service in %s to generate 3D models.', 'realitin-ar' ),
+					'<a href="' . esc_url( admin_url( 'options-general.php?page=' . Realitin_AR_Settings::PAGE ) ) . '">' . esc_html__( 'Settings → Realitin AR', 'realitin-ar' ) . '</a>'
+				);
+				echo '</p></div>';
+				return;
+			}
+			if ( ! $product->get_image_id() ) {
+				echo '<p>' . esc_html__( 'Add a product image first. The 3D model is generated from it.', 'realitin-ar' ) . '</p></div>';
+				return;
+			}
+			$dimensions = Realitin_AR_Generator::prefill_dimensions( $product );
+			$fields     = array(
+				'width'  => __( 'Width', 'realitin-ar' ),
+				'height' => __( 'Height', 'realitin-ar' ),
+				'depth'  => __( 'Depth', 'realitin-ar' ),
+			);
+			?>
+			<p class="description"><?php esc_html_e( 'Furniture’s own dimensions in centimetres (not the package). The model is scaled to these.', 'realitin-ar' ); ?></p>
+			<div class="realitin-ar-dimensions">
+				<?php foreach ( $fields as $axis => $label ) : ?>
+					<label>
+						<span><?php echo esc_html( $label ); ?></span>
+						<input type="number" min="1" max="999" step="0.1" inputmode="decimal" value="<?php echo esc_attr( (string) $dimensions[ $axis ] ); ?>" data-realitin-ar-dimension="<?php echo esc_attr( $axis ); ?>" />
+					</label>
+				<?php endforeach; ?>
+			</div>
+			<p>
+				<button type="button" class="button button-primary" data-realitin-ar-generate-start>
+					<?php esc_html_e( 'Generate 3D model', 'realitin-ar' ); ?>
+				</button>
+			</p>
+			<div class="realitin-ar-generate__status" aria-live="polite" data-realitin-ar-generate-status></div>
 		</div>
 		<?php
 	}
@@ -91,6 +147,7 @@ class Realitin_AR_Admin {
 			return;
 		}
 		wp_enqueue_media();
+		wp_enqueue_style( 'realitin-ar-admin', REALITIN_AR_URL . 'assets/css/admin.css', array(), REALITIN_AR_VERSION );
 		wp_enqueue_script(
 			'realitin-ar-admin',
 			REALITIN_AR_URL . 'assets/js/admin.js',
@@ -98,15 +155,38 @@ class Realitin_AR_Admin {
 			REALITIN_AR_VERSION,
 			true
 		);
+		global $post;
 		wp_localize_script(
 			'realitin-ar-admin',
 			'realitinArAdmin',
 			array(
-				'mime'   => Realitin_AR_Model_Files::MIME,
-				'title'  => __( 'Select 3D model (GLB)', 'realitin-ar' ),
-				'button' => __( 'Use this model', 'realitin-ar' ),
-				'change' => __( 'Change model', 'realitin-ar' ),
-				'select' => __( 'Select GLB model', 'realitin-ar' ),
+				'mime'      => Realitin_AR_Model_Files::MIME,
+				'title'     => __( 'Select 3D model (GLB)', 'realitin-ar' ),
+				'button'    => __( 'Use this model', 'realitin-ar' ),
+				'change'    => __( 'Change model', 'realitin-ar' ),
+				'select'    => __( 'Select GLB model', 'realitin-ar' ),
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'nonce'     => wp_create_nonce( Realitin_AR_Generator::NONCE_ACTION ),
+				'productId' => $post ? (int) $post->ID : 0,
+				'job'       => $post ? Realitin_AR_Generator::job_state( $post->ID ) : null,
+				'status'    => array(
+					'queued'     => __( 'Preparing the image…', 'realitin-ar' ),
+					'uploading'  => __( 'Preparing the image…', 'realitin-ar' ),
+					/* translators: %d: progress percentage */
+					'generating' => __( 'Creating the 3D model… %d %%', 'realitin-ar' ),
+					'done'       => __( 'Finishing the model…', 'realitin-ar' ),
+					'processing' => __( 'Finishing the model…', 'realitin-ar' ),
+					'imported'   => __( 'Model ready. It has been added to the product.', 'realitin-ar' ),
+					'failed'     => __( 'Creating the model failed.', 'realitin-ar' ),
+				),
+				'errors'    => array(
+					'quality'    => __( 'The generated model did not pass the automatic check. Try a different product image.', 'realitin-ar' ),
+					'generation' => __( 'The 3D model could not be generated. Try again or use a different product image.', 'realitin-ar' ),
+					'import'     => __( 'The model was generated but could not be added to the media library. Try again.', 'realitin-ar' ),
+				),
+				'warningsTitle' => __( 'Check the model:', 'realitin-ar' ),
+				'requestFailed' => __( 'The request failed. Check your connection and try again.', 'realitin-ar' ),
+				'generateAgain' => __( 'Generate again', 'realitin-ar' ),
 			)
 		);
 	}

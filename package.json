@@ -11,9 +11,10 @@
     "models:optimize": "node scripts/optimize-models.mjs",
     "models:check": "node scripts/check-models.ts",
     "wp:vendor": "node scripts/wp-plugin-vendor.mjs",
-    "wp:dev": "npm run wp:vendor && npx -y @wp-playground/cli@3.1.58 server --port=9400 --login --blueprint=wordpress-plugin/dev/blueprint.json --mount=./wordpress-plugin/realitin-ar:/wordpress/wp-content/plugins/realitin-ar --mount=./wordpress-plugin/dev/mu-plugins:/wordpress/wp-content/mu-plugins --mount=./wordpress-plugin/dev:/realitin-dev --mount=./public/models:/realitin-models",
+    "wp:dev": "npm run wp:vendor && node scripts/wp-dev.mjs",
     "wp:zip": "npm run wp:vendor && mkdir -p dist-plugin && rm -f dist-plugin/realitin-ar.zip && cd wordpress-plugin && zip -rq ../dist-plugin/realitin-ar.zip realitin-ar -x '*.DS_Store' && echo dist-plugin/realitin-ar.zip",
-    "wp:dev:public": "npm run wp:vendor && npx -y @wp-playground/cli@3.1.58 server --port=9400 --site-url=$WP_SITE_URL --blueprint=wordpress-plugin/dev/blueprint.json --mount=./wordpress-plugin/realitin-ar:/wordpress/wp-content/plugins/realitin-ar --mount=./wordpress-plugin/dev:/realitin-dev --mount=./public/models:/realitin-models"
+    "wp:dev:public": "npm run wp:vendor && node scripts/wp-dev.mjs --public",
+    "server": "node --env-file-if-exists=server/.env server/index.ts"
   },
   "dependencies": {
     "@google/model-viewer": "^4.4.0",

@@ -10,12 +10,17 @@ require_once ABSPATH . 'wp-admin/includes/image.php';
 
 wp_set_current_user( 1 );
 
-// Playground's default admin password is public knowledge; the store may be shared through a tunnel.
-wp_set_password( wp_generate_password( 32 ), 1 );
+// Playground's default admin password is public knowledge. When the store is shared through a tunnel
+// (npm run wp:dev:public), replace it; locally it is needed for automatic login.
+if ( defined( 'REALITIN_DEV_PUBLIC' ) ) {
+	wp_set_password( wp_generate_password( 32 ), 1 );
+}
 
 // Show the shop to visitors (new WooCommerce stores start in "coming soon" mode).
 update_option( 'woocommerce_coming_soon', 'no' );
 update_option( 'woocommerce_store_pages_only', 'no' );
+// The test product dimensions below are in centimetres (a new US store defaults to inches).
+update_option( 'woocommerce_dimension_unit', 'cm' );
 
 $products = array(
 	array( 'Velvet Lounge Chair', 'SheenChair.glb', '499' ),
@@ -42,4 +47,22 @@ foreach ( $products as list( $name, $model, $price ) ) {
 		continue;
 	}
 	update_post_meta( $product_id, REALITIN_AR_META_MODEL, $attachment_id );
+}
+
+// Product with a photo but no 3D model: for testing "Generate 3D model".
+// The photo is a render of the CC0 SheenChair model (fixtures/lounge-chair-photo.jpg).
+$product = new WC_Product_Simple();
+$product->set_name( 'Tufted Lounge Chair (generate from photo)' );
+$product->set_regular_price( '549' );
+$product->set_status( 'publish' );
+// WooCommerce dimensions (store unit cm): length = side to side, width = front to back.
+$product->set_length( '83' );
+$product->set_width( '57' );
+$product->set_height( '69' );
+$product_id = $product->save();
+$tmp        = wp_tempnam( 'lounge-chair-photo.jpg' );
+copy( '/realitin-dev/fixtures/lounge-chair-photo.jpg', $tmp );
+$image_id = media_handle_sideload( array( 'name' => 'lounge-chair-photo.jpg', 'tmp_name' => $tmp ), $product_id );
+if ( ! is_wp_error( $image_id ) ) {
+	set_post_thumbnail( $product_id, $image_id );
 }

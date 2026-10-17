@@ -120,6 +120,40 @@ WP_SITE_URL=https://<tunneli> npm run wp:dev:public   # puhelintestiin tunnelin 
 
 Testikaupassa on kolme tuotetta: kaksi mallin kanssa ja yksi ilman. Kauppa luodaan joka käynnistyksellä uudelleen ([wordpress-plugin/dev](wordpress-plugin/dev)).
 
+## Tuotekuvasta 3D-malliksi (Realitin-palvelu)
+
+```
+WordPress-lisäosa ──(tuotekuva + mitat)──► Realitin-palvelu ──► Tripo (tekoäly)
+       ▲                                          │
+       └──── valmis GLB mediakirjastoon ◄─────────┘ keskitys lattiatasolle, skaalaus mittoihin,
+                                                     optimointi, automaattinen tarkistus
+```
+
+**Kauppiaan näkymä:** tuotteen muokkausnäkymän laatikossa *3D model (Realitin AR)* on osio *Generate from product image*. Mitat esitäytetään WooCommercen mittakentistä senttimetreiksi muunnettuina, mutta kauppias vahvistaa ne, koska kentissä on usein pakkauksen mitat. **Generate 3D model** lähettää tuotekuvan ja mitat palveluun. Tila päivittyy (*Preparing the image… → Creating the 3D model… % → Finishing the model… → Model ready*), ja valmis malli lisätään mediakirjastoon ja tuotteelle. Jos mittasuhteet poikkeavat annetuista yli 15 %, kauppias näkee varoituksen.
+
+**Palvelu** ([server/](server)) on Node.js-sovellus, joka säilyttää Tripon API-avaimen. WordPress ja selain eivät näe avainta.
+
+| | |
+| --- | --- |
+| `POST /v1/jobs` | `{ image: base64, name, dimensions: { widthCm, heightCm, depthCm } }` → 202 + työ |
+| `GET /v1/jobs/:id` | tila: `queued`, `uploading`, `generating`, `processing`, `done`, `failed` |
+| `GET /v1/models/:id.glb` | valmis malli |
+| Tunnistus | `Authorization: Bearer <REALITIN_API_KEY>` |
+
+Ketju: kuvan tarkistus (vähintään 256 px, muunnos PNG:ksi, pidempi sivu enintään 2048 px) → Tripo (kuvan lataus, `image-to-model`, tilan kysely, GLB ladataan heti, koska osoite vanhenee 5 minuutissa) → jälkikäsittely (valinnainen kierto, yhtenäinen skaalaus mittoihin akselikohtaisten suhteiden mediaanilla, keskitys lattiatasolle, JPEG-tekstuurit, `dedup`, `prune`) → tarkistus (geometria olemassa, enintään 500 000 kolmiota, mittasuhteet). Generointivirheessä yritetään kerran uudelleen.
+
+```sh
+cp server/.env.example server/.env   # täytä REALITIN_API_KEY (esim. openssl rand -hex 32)
+npm run server                       # http://127.0.0.1:8787
+npm run wp:dev                       # testikauppa, joka on yhdistetty palveluun
+```
+
+`REALITIN_PROVIDER=mock` palauttaa valmiin esimerkkimallin. Sillä voi testata koko ketjun ilman Tripo-avainta ja ilman kuluja. Oikea generointi: `REALITIN_PROVIDER=tripo` ja `TRIPO_API_KEY`.
+
+Testikaupan tuotteella *Tufted Lounge Chair (generate from photo)* on tuotekuva mutta ei mallia. Kuva on renderöity CC0-lisensoidusta Sheen Chair -mallista.
+
+**PoC-rajoitukset:** yksi yhteinen API-avain (ei kauppiaskohtaisia tilejä eikä laskutusta), työt ja mallit tallennetaan paikalliselle levylle (`server/data/`), ei taustanpoistoa ennen generointia (Tripo käsittelee taustan itse), ei ääriviivavertailua alkuperäiseen kuvaan. Tripon tuottaman mallin etusuunta on vielä tarkistamatta, ja sitä voi korjata asetuksella `TRIPO_FRONT_ROTATION_DEG`.
+
 ## Taustan poisto (PHASE 3)
 
 Näkymä *Oma kuva* (`#/oma-kuva`):
