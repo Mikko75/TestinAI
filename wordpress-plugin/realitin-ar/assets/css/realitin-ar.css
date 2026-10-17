@@ -1,0 +1,178 @@
+/* Realitin AR – product page button and dialog. Inherits the theme's fonts and button styles. */
+
+.realitin-ar {
+	margin: 1em 0;
+}
+
+.realitin-ar__open {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+}
+
+.realitin-ar__icon {
+	flex: none;
+}
+
+.realitin-ar__dialog {
+	width: min(960px, calc(100vw - 32px));
+	max-height: calc(100dvh - 32px);
+	padding: 20px;
+	border: 0;
+	border-radius: 16px;
+	background: #fff;
+	color: #2b2a27;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.realitin-ar__dialog::backdrop {
+	background: rgba(20, 18, 15, 0.55);
+}
+
+.realitin-ar__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 12px;
+}
+
+.realitin-ar__title {
+	margin: 0;
+	font-size: 1.25rem;
+	line-height: 1.3;
+}
+
+/* Doubled class: themes style all buttons, so the reset needs higher specificity. */
+.realitin-ar__close.realitin-ar__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	padding: 0;
+	min-height: 0;
+	box-shadow: none;
+	width: 44px;
+	height: 44px;
+	margin: -8px -8px 0 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: inherit;
+	font-size: 28px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.realitin-ar__close.realitin-ar__close:hover {
+	background: #f1eee9;
+}
+
+.realitin-ar__close:focus-visible,
+.realitin-ar__viewer:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.realitin-ar__stage {
+	position: relative;
+	height: min(60dvh, 560px);
+	min-height: 280px;
+	border-radius: 12px;
+	background: #ebe7e0;
+	overflow: hidden;
+}
+
+.realitin-ar__viewer {
+	display: block;
+	width: 100%;
+	height: 100%;
+	/* The dialog has its own AR button. */
+	--ar-button-display: none;
+	--poster-color: transparent;
+}
+
+.realitin-ar__overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 24px;
+	color: #5f5b54;
+	text-align: center;
+	pointer-events: none;
+}
+
+.realitin-ar__overlay--error {
+	background: #ebe7e0;
+	color: #2b2a27;
+	pointer-events: auto;
+}
+
+.realitin-ar__overlay[hidden] {
+	display: none;
+}
+
+.realitin-ar__bar {
+	width: 160px;
+	height: 4px;
+	border-radius: 2px;
+	background: #d8d2c8;
+	overflow: hidden;
+}
+
+.realitin-ar__bar > span {
+	display: block;
+	width: 0;
+	height: 100%;
+	background: #2b2a27;
+	transition: width 0.2s;
+}
+
+.realitin-ar__hint {
+	margin: 12px 0;
+	color: #5f5b54;
+}
+
+.realitin-ar__start {
+	width: 100%;
+	min-height: 48px;
+}
+
+.realitin-ar__start:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.realitin-ar__help {
+	margin: 10px 0 0;
+	color: #5f5b54;
+	font-size: 0.95em;
+}
+
+@media (min-width: 640px) {
+	.realitin-ar__start {
+		width: auto;
+		padding-inline: 2.5em;
+	}
+}
+
+/* Full-screen dialog on phones. */
+@media (max-width: 639px) {
+	.realitin-ar__dialog {
+		width: 100vw;
+		max-width: 100vw;
+		height: 100dvh;
+		max-height: 100dvh;
+		margin: 0;
+		padding: 16px;
+		border-radius: 0;
+	}
+
+	.realitin-ar__stage {
+		height: 58dvh;
+	}
+}

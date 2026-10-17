@@ -1,0 +1,30 @@
+<?php
+// Finnish translation (WordPress 6.5+ PHP translation file).
+return array(
+	'domain'       => 'realitin-ar',
+	'plural-forms' => 'nplurals=2; plural=(n != 1);',
+	'language'     => 'fi',
+	'messages'     => array(
+		'3D model (Realitin AR)'                                                                                => '3D-malli (Realitin AR)',
+		'3D model of %s'                                                                                        => '3D-malli: %s',
+		'AR is available once the 3D model has loaded.'                                                         => 'AR-katselu on käytettävissä, kun 3D-malli on ladattu.',
+		'Change model'                                                                                          => 'Vaihda malli',
+		'Checking whether your device supports AR…'                                                             => 'Tarkistetaan, tukeeko laitteesi AR-katselua…',
+		'Close'                                                                                                 => 'Sulje',
+		'Loading 3D model…'                                                                                     => 'Ladataan 3D-mallia…',
+		'Model:'                                                                                                => 'Malli:',
+		'Move your phone and place the furniture where you want it. It is shown at its real size.'              => 'Liikuta puhelinta ja sijoita huonekalu haluamaasi paikkaan. Se näkyy oikeassa koossaan.',
+		'No 3D model. Add a GLB file to show the product in 3D and AR.'                                         => 'Ei 3D-mallia. Lisää GLB-tiedosto, niin tuote näkyy 3D:nä ja AR:ssä.',
+		'Remove'                                                                                                => 'Poista',
+		'Rotate and zoom to inspect the product.'                                                               => 'Pyöritä ja tarkastele huonekalua.',
+		'Select 3D model (GLB)'                                                                                 => 'Valitse 3D-malli (GLB)',
+		'Select GLB model'                                                                                      => 'Valitse GLB-malli',
+		'The 3D model could not be loaded. Check your connection and try again.'                                => '3D-mallia ei voitu ladata. Tarkista verkkoyhteys ja yritä uudelleen.',
+		'The AR view could not be opened. You can keep viewing the furniture in 3D.'                            => 'AR-näkymän avaaminen ei onnistunut. Voit jatkaa huonekalun tarkastelua 3D-näkymässä.',
+		'The model is shown at its real size in AR. Check that the model is in metres and stands on the floor.' => 'Malli näytetään AR:ssä omassa koossaan. Varmista, että mallin yksikkö on metri ja että se seisoo lattiatasolla.',
+		'Try again'                                                                                             => 'Yritä uudelleen',
+		'Use this model'                                                                                        => 'Käytä tätä mallia',
+		'View in your room'                                                                                     => 'Katso omassa tilassasi',
+		'You can view the furniture in 3D. Viewing it in your room requires a compatible phone and browser.'    => 'Voit tarkastella huonekalua 3D-näkymässä. AR-katselu vaatii yhteensopivan puhelimen ja selaimen.',
+	),
+);

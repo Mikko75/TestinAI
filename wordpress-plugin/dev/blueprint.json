@@ -1,0 +1,20 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/wp-admin/edit.php?post_type=product",
+	"preferredVersions": { "php": "8.3", "wp": "latest" },
+	"features": { "networking": true },
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": { "resource": "wordpress.org/plugins", "slug": "woocommerce" },
+			"options": { "activate": true }
+		},
+		{
+			"step": "installTheme",
+			"themeData": { "resource": "wordpress.org/themes", "slug": "storefront" },
+			"options": { "activate": true }
+		},
+		{ "step": "activatePlugin", "pluginPath": "realitin-ar/realitin-ar.php" },
+		{ "step": "runPHP", "code": "<?php require '/wordpress/wp-load.php'; require '/realitin-dev/setup.php';" }
+	]
+}

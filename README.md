@@ -102,6 +102,24 @@ Geometriaa ei pakata (Draco/Meshopt), koska model-viewer hakisi dekooderit ulkoi
 - Scene Viewer vaatii julkisen HTTPS-osoitteen; WebXR vaatii HTTPS-yhteyden. Pelkkä lähiverkon HTTP-osoite ei riitä.
 - JS-paketti on noin 1,25 Mt (gzip 362 kt), lähes kokonaan model-viewer ja three.js. Koko on sivun pääsisältö, joten jakaminen osiin ei nopeuttaisi mallin näkymistä; Vite varoittaa koosta.
 
+## WordPress-lisäosa (realitin-ar)
+
+WooCommerce-lisäosa kansiossa [wordpress-plugin/realitin-ar](wordpress-plugin/realitin-ar). Ensimmäinen versio (0.1.0): kauppias liittää tuotteeseen GLB-mallin, ja tuotesivulle tulee **View in your room / Katso omassa tilassasi** -painike. Painike avaa 3D-näkymän, ja yhteensopivalla puhelimella sieltä käynnistyy AR. Tekoälyä ei vielä käytetä.
+
+- **Ylläpito:** tuotteen muokkausnäkymässä on laatikko *3D model (Realitin AR)*, jossa malli valitaan mediakirjastosta. Lisäosa sallii .glb-tiedostot vain käyttäjille, joilla on oikeus muokata tuotteita, ja tarkistaa tiedoston alun (`glTF`, versio 2), joten väärennetty tiedosto hylätään.
+- **Tuotesivu:** painike tulee ostoskoripainikkeen alle (`woocommerce_single_product_summary`, prioriteetti 35). Automaattisen lisäyksen voi poistaa suodattimella `realitin_ar_auto_insert`, ja painikkeen voi sijoittaa itse lyhytkoodilla `[realitin_ar]`.
+- **Suorituskyky:** model-viewer (1 Mt) tulee lisäosan mukana, ja se ladataan vasta kun ikkuna avataan. Tuotteilla, joilla ei ole mallia, lisäosan tiedostoja ei ladata lainkaan.
+- **Kielet:** englanti ja suomi (`languages/realitin-ar-fi.l10n.php`, WordPress 6.5+).
+- **Testattu:** WordPress 7.1.3, WooCommerce 11.2.1, PHP 8.3, teemat Storefront ja Twenty Twenty-Five.
+
+```sh
+npm run wp:dev         # paikallinen testikauppa http://127.0.0.1:9400 (WordPress Playground), kirjautuu ylläpitäjäksi
+npm run wp:zip         # asennuspaketti dist-plugin/realitin-ar.zip
+WP_SITE_URL=https://<tunneli> npm run wp:dev:public   # puhelintestiin tunnelin kautta, ilman automaattista kirjautumista
+```
+
+Testikaupassa on kolme tuotetta: kaksi mallin kanssa ja yksi ilman. Kauppa luodaan joka käynnistyksellä uudelleen ([wordpress-plugin/dev](wordpress-plugin/dev)).
+
 ## Taustan poisto (PHASE 3)
 
 Näkymä *Oma kuva* (`#/oma-kuva`):
