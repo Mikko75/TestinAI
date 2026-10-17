@@ -72,7 +72,9 @@ if ( ! is_wp_error( $image_id ) ) {
 $photo = '/realitin-dev/private/leather-recliner-sofa-photo.png';
 if ( file_exists( $photo ) && file_exists( '/realitin-models/ParametricReclinerSofa.glb' ) ) {
 	$product = new WC_Product_Simple();
-	$product->set_name( 'Leather Power Reclining Sofa (parametric model)' );
+	$product->set_name( 'Leather Power Reclining Sofa' );
+	// The slug stays the same so links already shared keep working.
+	$product->set_slug( 'leather-power-reclining-sofa-parametric-model' );
 	$product->set_regular_price( '2199' );
 	$product->set_status( 'publish' );
 	$product->set_length( '220' );
@@ -91,5 +93,27 @@ if ( file_exists( $photo ) && file_exists( '/realitin-models/ParametricReclinerS
 	$model_id = media_handle_sideload( array( 'name' => 'ParametricReclinerSofa.glb', 'tmp_name' => $tmp ), $product_id );
 	if ( ! is_wp_error( $model_id ) ) {
 		update_post_meta( $product_id, REALITIN_AR_META_MODEL, $model_id );
+	}
+
+	// Public demo: visitors see only this sofa. Other products stay visible to the admin (private).
+	if ( defined( 'REALITIN_DEV_PUBLIC' ) ) {
+		$others = wc_get_products( array( 'limit' => -1, 'status' => 'publish', 'exclude' => array( $product_id ), 'return' => 'ids' ) );
+		foreach ( $others as $other_id ) {
+			wp_update_post( array( 'ID' => $other_id, 'post_status' => 'private' ) );
+		}
+		update_option( 'blogname', 'Realitin AR' );
+		update_option( 'blogdescription', '' );
+		// Remove WordPress sample content and open the shop as the front page.
+		foreach ( get_posts( array( 'post_type' => array( 'post', 'page' ), 'name' => 'hello-world', 'numberposts' => 1 ) ) as $sample ) {
+			wp_delete_post( $sample->ID, true );
+		}
+		$sample_page = get_page_by_path( 'sample-page' );
+		if ( $sample_page ) {
+			wp_delete_post( $sample_page->ID, true );
+		}
+		update_option( 'show_on_front', 'page' );
+		update_option( 'page_on_front', wc_get_page_id( 'shop' ) );
+		// Empty sidebar (default widgets: recent posts, archives, categories).
+		update_option( 'sidebars_widgets', array( 'wp_inactive_widgets' => array(), 'array_version' => 3 ) );
 	}
 }
