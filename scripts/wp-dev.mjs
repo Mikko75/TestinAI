@@ -4,6 +4,7 @@
 // Palvelun avain luetaan tiedostosta server/.env (REALITIN_API_KEY).
 
 import { spawn } from 'node:child_process'
+import { randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -44,6 +45,10 @@ const args = [
 if (isPublic) {
   args.push(`--site-url=${siteUrl}`)
   args.push('--define', 'REALITIN_DEV_PUBLIC', '1')
+  // Playground's default admin password is public knowledge; use a one-off password instead.
+  const password = randomBytes(12).toString('base64url')
+  args.push('--define', 'REALITIN_DEV_ADMIN_PASSWORD', password)
+  console.log(`Ylläpito: ${siteUrl}/wp-admin/  käyttäjä: admin  salasana: ${password}`)
 } else {
   args.push('--login', '--mount=./wordpress-plugin/dev/mu-plugins:/wordpress/wp-content/mu-plugins')
 }

@@ -13,7 +13,7 @@ wp_set_current_user( 1 );
 // Playground's default admin password is public knowledge. When the store is shared through a tunnel
 // (npm run wp:dev:public), replace it; locally it is needed for automatic login.
 if ( defined( 'REALITIN_DEV_PUBLIC' ) ) {
-	wp_set_password( wp_generate_password( 32 ), 1 );
+	wp_set_password( defined( 'REALITIN_DEV_ADMIN_PASSWORD' ) ? REALITIN_DEV_ADMIN_PASSWORD : wp_generate_password( 32 ), 1 );
 }
 
 // Show the shop to visitors (new WooCommerce stores start in "coming soon" mode).
